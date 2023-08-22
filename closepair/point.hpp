@@ -3,7 +3,7 @@
 
 struct Point {
     double x, y;
-    Point(double x, double y) : x(x), y(y) {}
+    Point(long double x, long double y) : x(x), y(y) {}
     Point() : x(0), y(0) {}
     bool operator==(const Point& p) const;
     double dist(const Point& p) const;
