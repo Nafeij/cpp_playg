@@ -15,8 +15,10 @@ if(NOT matplotplusplus_POPULATED)
 endif()
 
 
-set(SOURCES main.cpp closest.cpp point.cpp util.cpp plot.cpp)
+# set(SOURCES main.cpp closest.cpp point.cpp util.cpp plot.cpp)
+set(SOURCES test.cpp)
 add_executable(closest ${SOURCES})
+
 target_link_libraries(closest PUBLIC matplot)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
