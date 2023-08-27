@@ -45,13 +45,6 @@ ld dist(pt a, pt b)
     return hypot(a.first - b.first, a.second - b.second);
 }
 
-void pswap(pt &a, pt &b)
-{
-    pt temp = a;
-    a = b;
-    b = temp;
-}
-
 void initRandPoints(long double max)
 {
     std::random_device rd;
@@ -86,8 +79,7 @@ Ans bruteForce(pt points[N])
     {
         for (int j = i + 1; j < N; j++)
         {
-            ld d = dist(points[i], points[j]);
-            if (d < min)
+            if (ld d = dist(points[i], points[j]); d < min)
             {
                 min = d;
                 ans_pair = {points[i], points[j]};
@@ -117,8 +109,7 @@ Ans sweep(pt points[N])
 
         for (auto it = lo_it; it != hi_it; it++)
         {
-            ld d = dist(points[i], {it->second, it->first});
-            if (min > d)
+            if (ld d = dist(points[i], {it->second, it->first}); min > d)
             {
                 min = d;
                 ans_pair = {points[i], {it->second, it->first}};
@@ -139,24 +130,26 @@ Ans shamos_hoey_rec(const pt *Px, pt *Py, const int start, const int n)
         {
             for (int j = i + 1; j < start + n; j++)
             {
-                ld d = dist(Px[i], Px[j]);
-                if (d < min)
+                if (ld d = dist(Px[i], Px[j]); d < min)
                 {
                     min = d;
                     ans_pair = {Px[i], Px[j]};
+                }
+                if (Py[i].second > Py[j].second)
+                {
+                    swap(Py[i], Py[j]);
                 }
             }
         }
         return {min, ans_pair};
     }
     const int mid = n / 2;
-    int i = start;
     ld mid_x = Px[start + mid - 1].first;
-    auto t_mid = stable_partition(Py + start, Py + start + n, [&](pt p)
-                                  { return p.first <= mid_x; });
+    stable_partition(Py + start, Py + start + n, [&](pt p)
+                                  { return p.first < mid_x; });
     Ans left = shamos_hoey_rec(Px, Py, start, mid);
     Ans right = shamos_hoey_rec(Px, Py, start + mid, n - mid);
-    inplace_merge(Py + start, t_mid, Py + start + n, [&](pt a, pt b)
+    inplace_merge(Py + start, Py + start + mid, Py + start + n, [&](pt a, pt b)
                   { return a.second < b.second; });
     Ans delta = left;
     if (right.first < left.first)
@@ -173,8 +166,7 @@ Ans shamos_hoey_rec(const pt *Px, pt *Py, const int start, const int n)
         {
             for (int j = strip.size() - 1; j >= 0 && Py[i].second - strip[j].second < delta.first; j--)
             {
-                ld d = dist(Py[i], strip[j]);
-                if (d < answer.first)
+                if (ld d = dist(Py[i], strip[j]); d < answer.first)
                 {
                     answer = {d, {Py[i], strip[j]}};
                 }
@@ -194,12 +186,12 @@ Ans shamos_hoey(pt Px[N])
     pt Py[N];
     copy(Px, Px + N, Py);
     sort(Px, Px + N);
-    sort(Py, Py + N, [](pt a, pt b)
-         { return a.second < b.second; });
+    // sort(Py, Py + N, [](pt a, pt b)
+    //      { return a.second < b.second; });
     return shamos_hoey_rec(Px, Py, 0, N);
 }
 
-pair<int, Ans> perf_wrapper(Ans (*func)(pt *), pt *points)
+Ans test(string name, Ans (*func)(pt *), pt *points)
 {
     mutex m;
     condition_variable cv;
@@ -218,29 +210,18 @@ pair<int, Ans> perf_wrapper(Ans (*func)(pt *), pt *points)
     {
         unique_lock<mutex> lk(m);
         if (cv.wait_for(lk, 10s) == std::cv_status::timeout)
-            throw std::runtime_error("Timeout");
+        {
+            cout << name << ": Timeout\n";
+            return {0, {{0, 0}, {0, 0}}};
+        }
     }
 
-    return {time, answer};
-}
-
-Ans tester(string name, Ans (*func)(pt *), pt points[N])
-{
-    try
-    {
-        auto a_t = perf_wrapper(func, points);
-        cout << name << ":\n\t("
-             << a_t.second.second.first.first << ", " << a_t.second.second.first.second << ") --- ("
-             << a_t.second.second.second.first << ", " << a_t.second.second.second.second << ") = "
-             << a_t.second.first
-             << ", Time: " << a_t.first << "ms\n";
-        return a_t.second;
-    }
-    catch (exception &e)
-    {
-        cout << name << ": " << e.what() << "\n";
-        return {0, {{0, 0}, {0, 0}}};
-    }
+    cout << name << ":\n\t("
+         << answer.second.first.first << ", " << answer.second.first.second << ") --- ("
+         << answer.second.second.first << ", " << answer.second.second.second << ") = "
+         << answer.first
+         << ", Time: " << time << "ms\n";
+    return answer;
 }
 
 int main()
@@ -249,9 +230,9 @@ int main()
     cout << fixed << setprecision(2);
     initRandPoints(1e9);
 
-    tester("Brute Force", bruteForce, points);
-    tester("Shamos Hoey", shamos_hoey, points);
-    auto ans = tester("Sweep", sweep, points);
+    test("Brute Force", bruteForce, points);
+    test("Shamos Hoey", shamos_hoey, points);
+    auto ans = test("Sweep", sweep, points);
 
     if (N < 200)
     {
