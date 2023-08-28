@@ -16,7 +16,7 @@ endif()
 
 
 # set(SOURCES main.cpp closest.cpp point.cpp util.cpp plot.cpp)
-set(SOURCES test.cpp)
+set(SOURCES main.cpp)
 add_executable(closest ${SOURCES})
 
 target_link_libraries(closest PUBLIC matplot)
