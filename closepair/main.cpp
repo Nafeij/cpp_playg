@@ -1,8 +1,3 @@
-/**Kattis - closestpair2
- * The classic problem. The line sweep algorithm we used previously still works fast enough.
- *
- * Time: O(im not sure), Space: O(n)
- */
 #pragma GCC optimize("Ofast")
 #pragma GCC target("sse,sse2,sse3,ssse3,sse4,popcnt,abm,mmx,avx,avx2,fma")
 #pragma GCC optimize("unroll-loops")
@@ -161,6 +156,104 @@ Ans shamos_hoey(pt Px[N])
     return shamos_hoey_rec(Px, Py, 0, N);
 }
 
+Ans golin_chew(pt points[N])
+{
+    auto p = points[1];
+    auto delta = dist(points[0], points[1]);
+    const int TSQRT = 2.828427124;
+
+    for (int i = 2; i < N; i++)
+    {
+        if (ld d = dist(points[0], points[i]); d < delta)
+        {
+            delta = d;
+            p = points[i];
+        }
+    }
+
+    Ans ans = {delta, {points[0], p}};
+    typedef pair<int, int> Sq;
+    map<Sq, int> s;
+
+    for (int i = 0; i < N; i++)
+    {
+        Sq i_sq = {points[i].first / (delta / TSQRT), points[i].second / (delta / TSQRT)};
+        // TODO: fix for negative numbers
+        auto l_delta = delta;
+        Sq l_sq;
+
+        for (int x = i_sq.first - 1; x <= i_sq.first + 1; x++)
+        {
+            for (int y = i_sq.second - 1; y <= i_sq.second + 1; y++)
+            {
+                Sq sq = {x, y};
+                if (s.find(sq) != s.end())
+                {
+                    if (ld d = dist(points[i], points[s[sq]]); d < l_delta)
+                    {
+                        l_delta = d;
+                        l_sq = sq;
+                    }
+                }
+            }
+        }
+
+        if (l_delta < delta)
+        {
+            delta = l_delta;
+            ans = {delta, {points[i], points[s[l_sq]]}};
+            s.clear();
+            for (int j = 0; j <= i; j++)
+            {
+                Sq j_sq = {points[j].first / (delta / TSQRT), points[j].second / (delta / TSQRT)};
+                s[j_sq] = j;
+            }
+        }
+        else
+        {
+            s[i_sq] = i;
+        }
+    }
+
+    return ans;
+}
+
+Ans khuller_matias(pt points[N])
+{
+    auto p = points[0];
+    ld delta = dist(points[0], points[1]);
+    typedef pair<int, int> Sq;
+    map<Sq, int> sqs;
+    set<pt> s = {points[0], points[1]};
+
+    for (int i = 2; i < N; i++)
+    {
+        s.insert(points[i]);
+        if (ld d = dist(points[0], points[i]); d < delta)
+        {
+            delta = d;
+        }
+    }
+    delta = delta / 2.828427124; // 2 * sqrt(2)
+    for (int i = 0; i < N; i++)
+    {
+        Sq i_sq = {points[i].first / delta, points[i].second / delta};
+        sqs[i_sq] = i;
+    }
+    for (auto sq : sqs)
+    {
+        for (int x = sq.first.first - 1; x <= sq.first.first + 1; x++)
+        {
+            for (int y = sq.first.second - 1; y <= sq.first.second + 1; y++)
+            {
+                // todo
+            }
+        }
+    }
+
+    return {delta, {points[0], p}};
+}
+
 Ans sweep(pt points[N])
 {
     int last_point;
@@ -192,19 +285,6 @@ Ans sweep(pt points[N])
     return {min, ans_pair};
 }
 
-Ans golin_chew(pt points[N])
-{
-    auto delta = dist(points[0], points[1]);
-    typedef pair<u_int64, u_int64> sq;
-    map<sq, pt> s;
-
-    for (int i = 0; i < N; i++)
-    {
-        sq i_sq = {points[i].first / delta, points[i].second / delta};
-        for (int
-    }
-}
-
 Ans test(string name, Ans (*func)(pt *), pt *points)
 {
     mutex m;
@@ -230,22 +310,22 @@ Ans test(string name, Ans (*func)(pt *), pt *points)
         }
     }
 
-    cout << name << ":\n\t("
-         << answer.second.first.first << ", " << answer.second.first.second << ") --- ("
-         << answer.second.second.first << ", " << answer.second.second.second << ") = "
-         << answer.first
-         << ", Time: " << time << "ms\n";
+    printf("%s:\n\t(%.2Lf, %.2Lf) --- (%.2Lf, %.2Lf) = %.2Lf, Time: %dms\n", name.c_str(),
+           answer.second.first.first, answer.second.first.second,
+           answer.second.second.first, answer.second.second.second,
+           answer.first, time);
     return answer;
 }
 
 int main()
 {
-    // fast_cin();
+    //fast_cin();
     cout << fixed << setprecision(2);
     initRandPoints(1e9);
 
     test("Brute Force", bruteForce, points);
     test("Shamos Hoey", shamos_hoey, points);
+    test("Golin Chew", golin_chew, points);
     auto ans = test("Sweep", sweep, points);
 
     if (N < 200)
